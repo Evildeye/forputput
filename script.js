@@ -78,7 +78,7 @@ async function getETHBalance(address) {
 // Fungsi untuk mendapatkan saldo BNB dari BSC
 async function getBSCBalance(address) {
   // Ganti 'YOUR_BSC_API_KEY' dengan kunci API Anda untuk BSC (contoh: BSC RPC API)
-  const provider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/7TE7WEGMD443RZJ9I1BDHVEFB5FEIKD6W9");
+  const provider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
   const balance = await provider.getBalance(address);
   return ethers.utils.formatEther(balance);
 }
