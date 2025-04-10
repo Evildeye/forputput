@@ -1,8 +1,7 @@
-
 let processedSeeds = new Set(); // Track already processed seeds
 
 async function generateAndCheckSeed() {
-  const numSeeds = parseInt(document.getElementById("num-seeds").value); 
+  const numSeeds = parseInt(document.getElementById("num-seeds").value);
   const seedResultsContainer = document.getElementById("seed-results");
   const progressStatus = document.getElementById("progress-status");
 
@@ -12,14 +11,20 @@ async function generateAndCheckSeed() {
   const seedsToGenerate = [];
   let generatedSeeds = 0;
 
-  // Generate and queue seeds asynchronously
+  // Generate unique seeds
   while (generatedSeeds < numSeeds) {
     const randomMnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
 
+    // Ensure no duplicate seed
     if (!processedSeeds.has(randomMnemonic)) {
       processedSeeds.add(randomMnemonic);
       seedsToGenerate.push(randomMnemonic);
       generatedSeeds++;
+    }
+
+    // Update progress every 5 seeds generated
+    if (generatedSeeds % 5 === 0) {
+      progressStatus.textContent = `Progress: ${generatedSeeds}/${numSeeds}`;
     }
   }
 
@@ -29,8 +34,9 @@ async function generateAndCheckSeed() {
 
   // Append results after all have been processed
   walletResults.forEach(result => seedResultsContainer.appendChild(result));
-  
-  progressStatus.textContent = `Progress: ${numSeeds}/${numSeeds}`; // Final progress
+
+  // Final progress update
+  progressStatus.textContent = `Progress: ${numSeeds}/${numSeeds}`;
 }
 
 async function checkWallet(seed) {
@@ -38,7 +44,7 @@ async function checkWallet(seed) {
   const address = wallet.address;
 
   // Fetch balances concurrently
-  const [eth, bnb, tokens] = await Promise.all([getETHBalance(address), getBSCBalance(address), getERC20Tokens(wallet.address)]);
+  const [eth, bnb] = await Promise.all([getETHBalance(address), getBSCBalance(address)]);
 
   const walletInfo = document.createElement("div");
   walletInfo.classList.add("wallet-info");
@@ -49,13 +55,10 @@ async function checkWallet(seed) {
     <p>Seed Phrase: ${seed}</p>
     <p>ETH Balance: ${eth} ETH</p>
     <p>BNB Balance: ${bnb} BNB</p>
-    <ul>
-      ${tokens.filter(t => parseFloat(t.balance) > 0).map(t => `<li>${t.balance} ${t.symbol}</li>`).join('')}
-    </ul>
   `;
 
   // Check if wallet has balance, and apply appropriate class
-  if (parseFloat(eth) > 0 || parseFloat(bnb) > 0 || tokens.some(t => parseFloat(t.balance) > 0)) {
+  if (parseFloat(eth) > 0 || parseFloat(bnb) > 0) {
     walletInfo.classList.add("has-balance");
   } else {
     walletInfo.classList.add("no-balance");
@@ -64,21 +67,18 @@ async function checkWallet(seed) {
   return walletInfo;
 }
 
-// Async function to fetch ETH balance
+// Fungsi untuk mendapatkan saldo ETH dari Infura
 async function getETHBalance(address) {
+  // Ganti 'YOUR_INFURA_KEY' dengan kunci API Anda untuk Ethereum (contoh: Infura)
   const provider = new ethers.JsonRpcProvider("https://mainnet.infura.io/v3/d3011414c0114807911c1b6cea9d79f4");
   const balance = await provider.getBalance(address);
   return ethers.utils.formatEther(balance);
 }
 
-// Async function to fetch BNB balance
+// Fungsi untuk mendapatkan saldo BNB dari BSC
 async function getBSCBalance(address) {
-  const provider = new ethers.JsonRpcProvider("https://rpc.ankr.com/bsc/7TE7WEGMD443RZJ9I1BDHVEFB5FEIKD6W9");
+  // Ganti 'YOUR_BSC_API_KEY' dengan kunci API Anda untuk BSC (contoh: BSC RPC API)
+  const provider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/7TE7WEGMD443RZJ9I1BDHVEFB5FEIKD6W9");
   const balance = await provider.getBalance(address);
   return ethers.utils.formatEther(balance);
-}
-
-// Placeholder for future ERC20 token fetching logic
-async function getERC20Tokens(address) {
-  return [];  // Placeholder for ERC20 tokens fetching logic
 }
