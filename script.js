@@ -9,20 +9,24 @@ async function generateAndCheckSeed() {
   const seedResultsContainer = document.getElementById("seed-results");
   seedResultsContainer.innerHTML = ""; // Clear previous results
 
-  let generatedSeeds = 0; // Menyimpan jumlah seed yang telah digenerate
+  console.log(`Generating ${numSeeds} seed phrases...`); // Debugging log
+
+  let generatedSeeds = 0;
 
   while (generatedSeeds < numSeeds) {
     const randomMnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
 
-    // Cek jika seed sudah pernah diproses
+    console.log(`Generated seed: ${randomMnemonic}`); // Debugging log
+
     if (processedSeeds.has(randomMnemonic)) {
-      continue; // Jika sudah ada, lanjutkan ke seed selanjutnya
+      console.log(`Seed already processed: ${randomMnemonic}`); // Jika seed sudah ada, log
+      continue; // Lewati seed yang sudah ada
     }
 
-    // Simpan seed yang sudah diproses
     processedSeeds.add(randomMnemonic);
 
-    // Call check wallet for each generated seed phrase
+    // Menambahkan log saat wallet sedang diperiksa
+    console.log(`Checking wallet for seed: ${randomMnemonic}`);
     await checkWallet(randomMnemonic, seedResultsContainer);
 
     generatedSeeds++;
@@ -32,18 +36,21 @@ async function generateAndCheckSeed() {
 async function getAddressFromSeed(seed) {
   const { ethers } = window.ethers;
   const wallet = ethers.Wallet.fromMnemonic(seed);
+  console.log(`Wallet Address: ${wallet.address}`); // Log alamat wallet yang dihasilkan
   return wallet;
 }
 
 async function getETHBalance(address) {
   const provider = new ethers.providers.InfuraProvider("mainnet", INFURA_API_KEY);
   const balance = await provider.getBalance(address);
+  console.log(`ETH Balance for ${address}: ${ethers.utils.formatEther(balance)} ETH`); // Log saldo ETH
   return ethers.utils.formatEther(balance);
 }
 
 async function getBSCBalance(address) {
   const provider = new ethers.providers.JsonRpcProvider(`https://bsc-dataseed.binance.org/`);
   const balance = await provider.getBalance(address);
+  console.log(`BNB Balance for ${address}: ${ethers.utils.formatEther(balance)} BNB`); // Log saldo BNB
   return ethers.utils.formatEther(balance);
 }
 
@@ -63,6 +70,10 @@ async function getERC20Tokens(address, isBSC = false) {
   for (const token of tokens) {
     const contract = new ethers.Contract(token.address, abi, provider);
     const bal = await contract.balanceOf(address);
+
+    // Menambahkan log untuk melihat saldo token yang didapat
+    console.log(`Token: ${token.symbol}, Address: ${address}, Balance: ${bal.toString()}`);
+
     const formatted = ethers.utils.formatUnits(bal, token.decimals);
     results.push({ symbol: token.symbol, balance: formatted });
   }
@@ -71,14 +82,21 @@ async function getERC20Tokens(address, isBSC = false) {
 }
 
 async function checkWallet(seed, seedResultsContainer) {
+  console.log(`Checking wallet for seed: ${seed}`); // Log seed yang sedang diperiksa
+
   const wallet = await getAddressFromSeed(seed);
   const address = wallet.address;
-  
+
+  console.log(`Wallet address: ${address}`); // Log alamat wallet yang dihasilkan dari seed
+
   const eth = await getETHBalance(address);
   const bnb = await getBSCBalance(address);
   const tokens = await getERC20Tokens(wallet.address);
 
+  console.log(`ETH Balance: ${eth}, BNB Balance: ${bnb}`); // Log saldo ETH dan BNB
+
   const walletInfo = document.createElement("div");
+  walletInfo.classList.add("wallet-info");
 
   const addressElem = document.createElement("p");
   addressElem.textContent = `Address: ${address}`;
@@ -104,9 +122,10 @@ async function checkWallet(seed, seedResultsContainer) {
 
   // Menyembunyikan hasil setelah beberapa detik
   if (parseFloat(eth) > 0 || parseFloat(bnb) > 0 || tokens.some(t => parseFloat(t.balance) > 0)) {
+    console.log(`Wallet has balance: ${eth} ETH, ${bnb} BNB`); // Log jika wallet memiliki saldo
+
     seedResultsContainer.appendChild(walletInfo);
 
-    // Menghilangkan hasil setelah 5 detik
     setTimeout(() => {
       seedResultsContainer.removeChild(walletInfo);
     }, 5000); // Menghilang setelah 5 detik
