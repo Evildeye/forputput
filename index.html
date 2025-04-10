@@ -4,203 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wallet Seed Generator and Checker</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f7f7f7;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-
-    h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-
-    #num-seeds {
-      padding: 10px;
-      font-size: 16px;
-      margin-right: 10px;
-      width: 100px;
-    }
-
-    button {
-      padding: 10px 15px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    #seed-results {
-      margin-top: 20px;
-      width: 100%;
-      max-width: 600px;
-    }
-
-    #progress-status {
-      margin-bottom: 20px;
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    .wallet-info {
-      padding: 15px;
-      background-color: #fff;
-      margin-bottom: 15px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .wallet-info.has-balance {
-      background-color: #d4edda;
-      border-color: #c3e6cb;
-      box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
-    }
-
-    .wallet-info.no-balance {
-      background-color: #f8d7da;
-      border-color: #f5c6cb;
-      box-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
-    }
-
-    .wallet-info p {
-      margin: 5px 0;
-    }
-
-    .wallet-info ul {
-      list-style-type: none;
-      padding: 0;
-    }
-
-    .wallet-info ul li {
-      background-color: #f1f1f1;
-      margin: 5px 0;
-      padding: 5px;
-      border-radius: 4px;
-    }
-
-    .wallet-info p {
-      font-size: 14px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <h1>Wallet Seed Generator and Checker</h1>
 
   <label for="num-seeds">Number of Seeds to Generate:</label>
-  <input type="number" id="num-seeds" value="1">
+  <input type="number" id="num-seeds" value="10">
   <button onclick="generateAndCheckSeed()">Generate and Check Wallet</button>
 
-  <div id="progress-status"></div> <!-- Progress Status -->
+  <div id="progress-status"></div>
   <div id="seed-results"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.4.3/dist/ethers.umd.min.js"></script>
-  <script>
-    let processedSeeds = new Set(); // Track already processed seeds
-
-    async function generateAndCheckSeed() {
-      const numSeeds = parseInt(document.getElementById("num-seeds").value); // Get the number of seeds
-      const seedResultsContainer = document.getElementById("seed-results");
-      const progressStatus = document.getElementById("progress-status");
-
-      seedResultsContainer.innerHTML = ""; // Clear previous results
-      progressStatus.textContent = `Progress: 0/${numSeeds}`; // Initialize progress
-
-      let generatedSeeds = 0;
-
-      while (generatedSeeds < numSeeds) {
-        const randomMnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
-
-        if (processedSeeds.has(randomMnemonic)) {
-          continue; // Skip if seed already processed
-        }
-
-        processedSeeds.add(randomMnemonic);
-
-        await checkWallet(randomMnemonic, seedResultsContainer);
-
-        generatedSeeds++;
-        progressStatus.textContent = `Progress: ${generatedSeeds}/${numSeeds}`; // Update progress
-      }
-    }
-
-    async function checkWallet(seed, seedResultsContainer) {
-      const wallet = ethers.Wallet.fromMnemonic(seed);
-      const address = wallet.address;
-
-      const eth = await getETHBalance(address);
-      const bnb = await getBSCBalance(address);
-      const tokens = await getERC20Tokens(wallet.address);
-
-      const walletInfo = document.createElement("div");
-
-      const addressElem = document.createElement("p");
-      addressElem.textContent = `Address: ${address}`;
-      walletInfo.appendChild(addressElem);
-
-      const seedElem = document.createElement("p");
-      seedElem.textContent = `Seed Phrase: ${seed}`;
-      walletInfo.appendChild(seedElem);
-
-      const ethElem = document.createElement("p");
-      ethElem.textContent = `ETH Balance: ${eth} ETH`;
-      walletInfo.appendChild(ethElem);
-
-      const bnbElem = document.createElement("p");
-      bnbElem.textContent = `BNB Balance: ${bnb} BNB`;
-      walletInfo.appendChild(bnbElem);
-
-      const tokenList = document.createElement("ul");
-      tokens.forEach(t => {
-        if (parseFloat(t.balance) > 0) {
-          const li = document.createElement("li");
-          li.textContent = `${t.balance} ${t.symbol}`;
-          tokenList.appendChild(li);
-        }
-      });
-      walletInfo.appendChild(tokenList);
-
-      if (parseFloat(eth) > 0 || parseFloat(bnb) > 0 || tokens.some(t => parseFloat(t.balance) > 0)) {
-        walletInfo.classList.add("wallet-info", "has-balance");
-      } else {
-        walletInfo.classList.add("wallet-info", "no-balance");
-        const noBalanceElem = document.createElement("p");
-        noBalanceElem.textContent = "No significant balance detected.";
-        walletInfo.appendChild(noBalanceElem);
-      }
-
-      seedResultsContainer.appendChild(walletInfo);
-    }
-
-    async function getETHBalance(address) {
-      const provider = new ethers.JsonRpcProvider("https://mainnet.infura.io/v3/YOUR_INFURA_KEY");
-      const balance = await provider.getBalance(address);
-      return ethers.utils.formatEther(balance);
-    }
-
-    async function getBSCBalance(address) {
-      const provider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
-      const balance = await provider.getBalance(address);
-      return ethers.utils.formatEther(balance);
-    }
-
-    async function getERC20Tokens(address) {
-      // Fungsi ini harus diperluas untuk mengambil token ERC20 (belum diimplementasikan secara penuh).
-      return [];
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
