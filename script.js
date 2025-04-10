@@ -125,9 +125,16 @@ async function checkWallet(seed, seedResultsContainer) {
     console.log(`Wallet has balance: ${eth} ETH, ${bnb} BNB`); // Log jika wallet memiliki saldo
 
     seedResultsContainer.appendChild(walletInfo);
+  } else {
+    // Jika saldo tidak ada, tetap tampilkan seed yang dicek
+    const noBalanceElem = document.createElement("p");
+    noBalanceElem.textContent = "No significant balance detected.";
+    walletInfo.appendChild(noBalanceElem);
 
-    setTimeout(() => {
-      seedResultsContainer.removeChild(walletInfo);
-    }, 5000); // Menghilang setelah 5 detik
+    seedResultsContainer.appendChild(walletInfo);
   }
+
+  setTimeout(() => {
+    seedResultsContainer.removeChild(walletInfo);
+  }, 5000); // Menghilang setelah 5 detik
 }
